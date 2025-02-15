@@ -1,12 +1,12 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
-//    `maven-publish`
+    `maven-publish`
 }
 
 android {
     namespace = "org.lynxz.shizuku"
-    compileSdk = 30
+    compileSdk = 35
 
     defaultConfig {
         minSdk = 24
@@ -32,11 +32,11 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
 }
 
@@ -47,19 +47,16 @@ dependencies {
     api(libs.shizukuProvider)
     api(libs.lynxzUtils)
 }
-group = "com.github.lucid-lynxz" // 指定group:com.github.<用户名>
-version = "1.0.0" // 版本号，可按需修改
 
-//publishing {
-//    publications {
-//        create<MavenPublication>("maven") {
-//            groupId = project.group.toString()
-//            artifactId = "shizuku"
-//            version = project.version.toString()
-//
-//            afterEvaluate {
-//                from(components["release"])
-//            }
-//        }
-//    }
-//}
+afterEvaluate {
+    publishing {
+        publications {
+            register("release", MavenPublication::class) {
+                from(components["release"])
+                groupId = "com.github.lucid-lynxz"
+                artifactId = "shizukuwrapper"
+                version = "1.0.0"
+            }
+        }
+    }
+}

@@ -12,7 +12,8 @@ appcompat = "1.7.0"
 material = "1.12.0"
 
 shizuku = "13.1.5"
-lynxzUtils = "0.1.20"
+lynxzUtils = "0.1.25"
+shizukuwrapper = "1.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -37,6 +38,7 @@ shizuku = { group = "dev.rikka.shizuku", name = "api", version.ref = "shizuku" }
 shizukuProvider = { group = "dev.rikka.shizuku", name = "provider", version.ref = "shizuku" }
 
 lynxzUtils = { group = "com.github.lucid-lynxz", name = "utils", version.ref = "lynxzUtils" }
+shizukuwrapper = { group = "com.github.lucid-lynxz", name = "shizukuwrapper", version.ref = "shizukuwrapper" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
