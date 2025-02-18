@@ -1,0 +1,4 @@
+includeBuild("version")
+rootProject.name = "ShizukuWrapper"
+include(":app")
+include(":shizuku")

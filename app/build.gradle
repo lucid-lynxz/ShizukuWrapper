@@ -1,0 +1,88 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+}
+apply from: "../config/sign.gradle"
+android {
+    compileSdkVersion BuildConfigInfo.compileSdkVersion
+
+    defaultConfig {
+        minSdkVersion BuildConfigInfo.minSdkVersion
+        targetSdkVersion BuildConfigInfo.targetSdkVersion
+        applicationId "org.lynxz.shizukuwrapper"
+        versionCode 3
+        versionName "1.0.2"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.release
+        }
+        release {
+            initWith(debug)
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+
+    android.applicationVariants.all { variant ->
+        // 在release模式可精简部分资源
+//        if (variant.buildType.name == 'release') {
+//            variant.mergeAssets.doLast {
+//                delete(fileTree(dir: variant.mergeAssets.outputDir, includes: ['test/**',]))
+//            }
+//        }
+
+        variant.outputs.all {// 自定义生成的apk名称
+            outputFileName = "ShizukuDemo_${variant.buildType.name}_v${versionName}.apk"
+        }
+
+        // 复制apk到固定目录,方便jenkins ci脚本运行
+//        variant.getAssembleProvider().get().doLast {
+//            println("===> assemble doLast: copy apk to special folder")
+//            variant.outputs.all { output ->// 自定义生成的apk名称
+//                def outputFile = output.outputFile
+//                if (outputFile != null && outputFile.name.endsWith(".apk")) {
+//                    def targetDir = "$rootDir/app/build/outputs/apk"
+//
+//                    if (outputFile != null && outputFile.name.endsWith('.apk')) {
+//                        project.copy {
+//                            from outputFile
+//                            into targetDir
+//                        }
+//                    }
+//                }
+//            }
+//        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    testImplementation(Testing.jUnit)
+    implementation(Libs.kotlinStdLib)
+
+    androidTestImplementation(Testing.extJunitX)
+    androidTestImplementation(Testing.espressoCoreX)
+    androidTestImplementation(Testing.runnerX)
+
+    implementation(Libs.appcompatX)
+    implementation(Libs.material)
+    implementation(Libs.constraintLayoutX)
+
+    implementation(Libs.kotlinCoreKtx)
+    implementation(Libs.gson)
+//    implementation(Libs.kotlinCoroutinesCore)
+//    implementation(Libs.kotlinCoroutinesAndroid)
+
+    implementation project(path: ":shizuku")// 使用本地代码
+//    implementation(libs.shizukuwrapper) // 使用 jitpack 仓库上的版本
+}

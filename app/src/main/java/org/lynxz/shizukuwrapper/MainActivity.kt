@@ -1,61 +1,27 @@
 package org.lynxz.shizukuwrapper
 
+import android.app.Activity
 import android.os.Bundle
-import android.util.Log
+import android.widget.Button
 import android.widget.Toast
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import org.lynxz.shizuku.ShizukuImpl
-import org.lynxz.shizukuwrapper.ui.theme.ShizukuWrapperTheme
 
-class MainActivity : ComponentActivity() {
+class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            ShizukuWrapperTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+        setContentView(R.layout.activity_main)
+
+        findViewById<Button>(R.id.btn_get_serial_number).setOnClickListener {
+            val result = ShizukuImpl.getSystemProperty("ro.serialno", "")
+            Toast.makeText(this, result, Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<Button>(R.id.btn_open_wifi).setOnClickListener {
+            ShizukuImpl.exec("svc wifi enable")
+        }
+        findViewById<Button>(R.id.btn_close_wifi).setOnClickListener {
+            ShizukuImpl.exec("svc wifi disable")
         }
     }
 }
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Column {
-        Text(
-            text = "Hello $name!",
-            modifier = modifier
-        )
-
-        Button(onClick = { ShizukuImpl.getSystemProperty("ro.serialno", "") }) { Text(text = "获取设备序列号") }
-        Button(onClick = { ShizukuImpl.exec("svc wifi enable") }) { Text(text = "开启wifi") }
-        Button(onClick = { ShizukuImpl.exec("svc wifi disable") }) { Text(text = "关闭wifi") }
-    }
-
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    ShizukuWrapperTheme {
-        Greeting("Android")
-    }
-}

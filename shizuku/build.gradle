@@ -1,0 +1,110 @@
+plugins {
+    id 'com.android.library'
+    id 'kotlin-android'
+    id 'maven-publish'
+}
+
+android {
+    compileSdkVersion BuildConfigInfo.compileSdkVersion
+
+    defaultConfig {
+        minSdkVersion BuildConfigInfo.minSdkVersion
+        targetSdkVersion BuildConfigInfo.targetSdkVersion
+        versionCode 1
+        versionName "1.0.5"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        consumerProguardFiles "consumer-rules.pro"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+//    testImplementation(Testing.jUnit)
+//    androidTestImplementation(Testing.extJunitX)
+//    androidTestImplementation(Testing.espressoCoreX)
+//    androidTestImplementation(Testing.runnerX)
+//
+//    implementation(Libs.appcompatX)
+
+    implementation(Libs.kotlinStdLib)
+    implementation(Libs.kotlinCoreKtx)
+    api(Libs.shizukuApi)
+    api(Libs.shizukuProvider)
+    api(Libs.lynxzUtils)
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release // 表示发布 release（Jitpack不会使用到）
+
+                // 自定义属性
+                groupId = 'com.github.lucid-lynxz' // 依赖库的 Group Id（Jitpack不会使用到）
+                artifactId = 'shizukuwrapper' // 依赖库的名称，单组件发布时随意填写，多组件时即为此组件的 ArtifactId（Jitpack不会使用到）
+                version = "1.0.5"
+            }
+        }
+    }
+}
+
+
+//publish {
+//    // 读取配置的信息
+//    Properties properties = new Properties()
+//    properties.load(project.rootProject.file('local.properties').newDataInputStream())
+//
+//    bintrayUser = properties.getProperty('user') // 用户名
+//    bintrayKey = properties.getProperty('apikey') // bintray 的 apikey ,可以在通过账户信息的 edit profile 中查询得到
+//    dryRun = false
+//
+//    userOrg = 'lucid-lynxz'
+//    groupId = 'org.lynxz.utils' // 填包名就好
+//    artifactId = 'androidutils'  // bintray中对应的packagename,大小写敏感
+//    uploadName = 'androidutils' // rbintray中对应的maven product名称,默认为artifactId, 大小写敏感
+//    publishVersion = '0.0.1' // 发布版本号
+//    desc = 'init'
+//    website = 'https://github.com/lucid-lynxz/PayWrapper.git'
+//}
+
+// 指定编码
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+// 打包源码
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
+task javadoc(type: Javadoc) {
+    failOnError false
+    source = android.sourceSets.main.java.sourceFiles
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    classpath += configurations.compile
+}
+
+// 制作文档(Javadoc)
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}

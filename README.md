@@ -1,6 +1,8 @@
 ## [Shizuku](https://github.com/RikkaApps/Shizuku) 封装, 简化使用操作
 [![](https://jitpack.io/v/lucid-lynxz/shizukuwrapper.svg)](https://jitpack.io/#lucid-lynxz/shizukuwrapper)
 
+1.0.5 版本开始, compileSdkVersion改为30,使用JDK1.8
+
 1. 导入依赖库:
     * 添加jitpack仓库: `maven { url = uri("https://jitpack.io") }`
     * 添加依赖: `api("com.github.lucid-lynxz:shizukuwrapper:latest")`

@@ -1,0 +1,42 @@
+buildscript {
+    apply from: "./config/dependencies.gradle"
+    repositories {
+//        maven { url 'https://maven.aliyun.com/repository/google' }
+//        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+//        maven { url 'https://maven.aliyun.com/repoitory/public' }
+        maven { url 'https://jitpack.io' }
+        mavenCentral()
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:4.2.2'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.6.10"
+        //classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
+    }
+}
+
+plugins {
+    id "org.lynxz.version"
+    id 'org.jetbrains.kotlin.android' version '1.6.10' apply false
+}
+
+subprojects { Project proj ->
+    proj.apply(plugin: "org.lynxz.version")
+}
+
+allprojects {
+    repositories {
+//        maven { url 'https://maven.aliyun.com/repository/google' }
+//        maven { url 'https://maven.aliyun.com/repository/jcenter' }
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+//        maven { url 'https://maven.aliyun.com/repoitory/public' }
+        maven { url 'https://jitpack.io' }
+        mavenCentral()
+        google()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
