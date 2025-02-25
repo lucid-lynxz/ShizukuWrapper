@@ -43,11 +43,12 @@ import kotlin.random.Random
  * -    4.4 绑定自定义服务: val serviceCode = ShizukuImpl.bindUserService(args, conn)
  * -    4.5 解绑自定义服务: ShizukuImpl.unbindUserService(serviceCode)
  * -    4.6 不需要使用时反初始化: ShizukuImpl.uninit()
- *
+ * -    4.7 shizuku是否可用: ShizukuImpl.isEnabled()
+ * -    4.8 获取imei: val imei = ShizukuImpl.getImei(index)
  */
 object ShizukuImpl {
     const val TAG = "ShizukuImpl"
-    private var enable = false
+    private var enabled = false // 当前是否可用
     private var userService: IUserService? = null
     private var pkgName: String = ""
 
@@ -63,6 +64,16 @@ object ShizukuImpl {
         val conn: ServiceConnection
     )
 
+    /**
+     * 执行命令的结果
+     * @param code 错误码, 0 表示正常,其他值表示异常
+     * @param msg 执行结果, code=0时,有效
+     * @param errMsg 错误信息
+     */
+    data class CmdResult(val code: Int, val msg: String, val errMsg: String) {
+        fun isSuccess() = code == 0
+    }
+
     private val mBindServiceArgs = SparseArray<BindServiceArgs>()
     private val obPermission = object : Shizuku.OnRequestPermissionResultListener {
         override fun onRequestPermissionResult(requestCode: Int, grantResult: Int) {
@@ -75,7 +86,7 @@ object ShizukuImpl {
     }
     private val obBinderReceive = Shizuku.OnBinderReceivedListener {
         LoggerUtil.w(TAG, "onBinderReceived")
-        enable = true
+        enabled = true
 
         val clsPath = UserService::class.java.name
         LoggerUtil.w(TAG, "pkgName=$pkgName,clsPath=$clsPath")
@@ -88,7 +99,7 @@ object ShizukuImpl {
     }
     private val obBinderDead = Shizuku.OnBinderDeadListener {
         LoggerUtil.w(TAG, "onBinderDead")
-        enable = false
+        enabled = false
         unbindUserService(innerUserServiceCode)
     }
 
@@ -109,10 +120,16 @@ object ShizukuImpl {
     /**
      * 指定指定的adb命令
      */
-    fun exec(cmd: String): String {
-        val result = userService?.exec(cmd) ?: "fail:userService not connected"
+    fun exec(cmd: String): CmdResult {
+        val errMsg = when {
+            !enabled -> "shizuku not enabled"
+            userService == null -> "userService not connected"
+            else -> ""
+        }
+
+        val result = userService?.exec(cmd) ?: ""
         LoggerUtil.w(TAG, "exec($cmd) result=$result")
-        return result
+        return CmdResult(if (errMsg.isEmpty()) 0 else 1, result, errMsg)
     }
 
     fun init(pkgName: Any?): Boolean {
@@ -151,6 +168,7 @@ object ShizukuImpl {
 
     /**
      * 获取系统属性, 比如序列号:ro.serialno
+     * imei: "persist.radio.imei"  或者 "ro.ril.oem.imei"
      * 首次运行会获取不到内容
      */
     fun getSystemProperty(key: String, def: String = ""): String {
@@ -207,7 +225,7 @@ object ShizukuImpl {
      * 判断是否拥有shizuku adb shell权限,若无,则申请权限
      */
     private fun checkPermission(code: Int): Boolean {
-        if (!enable) {
+        if (!enabled) {
             LoggerUtil.w(TAG, "checkPermission fail: Shizuku not enabled")
             return false
         }
@@ -251,5 +269,52 @@ object ShizukuImpl {
             tryTimes++
         } while (mCallbacks.indexOfKey(code) >= 0 && tryTimes <= 20)
         return code
+    }
+
+    /**
+     * shizuku是否可用
+     */
+    fun isEnabled(): Boolean = enabled
+
+    private val imeiList = mutableListOf<String>()
+
+    /**
+     * 获取设备的imei值
+     * @param index 第几个imei, 取值范围: 0-1, 0表示第一个imei, 1表示第二个imei
+     *
+     * 对于小米手机,实测: adb shell service call iphonesubinfo 1 返回一串点, 无意义
+     * 使用: adb shell getprop | grep -i IMEI 可得到多个imei信息:
+     * [persist.radio.imei]: [869071030058052]
+     * [persist.radio.imei1]: [869071030058052]
+     * [persist.radio.imei2]: [869071030058060]
+     * [ro.ril.miui.imei0]: [869071030058052]
+     * [ro.ril.miui.imei1]: [869071030058060]
+     * [ro.ril.oem.imei]: [869071030058052]
+     * [ro.ril.oem.imei1]: [869071030058052]
+     * [ro.ril.oem.imei2]: [869071030058060]
+     * 通过: adb shell getprop | grep -i IMEI | awk -F'[][]' '{print $4}' | sort | uniq -d 进行去重,得到:
+     * 869071030058052
+     * 869071030058060
+     * P.S. 若此时 adb shell service call iphonesubinfo 1 | awk -F "'" '{print $2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS= 可以获取到结果, 自测只会输出第一个iemi
+     *
+     */
+    fun getImei(index: Int = 0): String {
+        if (imeiList.isEmpty()) {
+            val result1 = exec("getprop | grep -i IMEI | awk -F'[][]' '{print \$4}' | sort | uniq -d")
+            val result =
+                if (result1.isSuccess()) result1 else exec(" service call iphonesubinfo 1 | awk -F \"'\" '{print \$2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS=")
+            if (result.isSuccess()) {
+                result.msg.split("\n").forEach {
+                    if (it.isNotBlank()) {
+                        imeiList.add(it)
+                    }
+                }
+            }
+        }
+
+        if (index >= 0 && index < imeiList.size) {
+            return imeiList[index]
+        }
+        return ""
     }
 }

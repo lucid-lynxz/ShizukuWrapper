@@ -13,8 +13,8 @@
         android:layout_height="wrap_content"
         android:text="打开wifi"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintRight_toLeftOf="@id/btn_close_wifi"
+        app:layout_constraintTop_toTopOf="parent"
         tools:ignore="HardcodedText" />
 
     <Button
@@ -37,5 +37,37 @@
         app:layout_constraintLeft_toRightOf="@id/btn_close_wifi"
         app:layout_constraintRight_toRightOf="parent"
         app:layout_constraintTop_toTopOf="@id/btn_close_wifi"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/btn_get_imei_fun1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="获取imei(方法1)"
+        app:layout_constraintTop_toBottomOf="@id/btn_open_wifi"
+        app:layout_constraintLeft_toLeftOf="@id/btn_open_wifi"
+        app:layout_constraintRight_toLeftOf="@id/btn_get_imei_fun2"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/btn_get_imei_fun2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="获取imei_1(方法2)"
+        app:layout_constraintBottom_toBottomOf="@id/btn_get_imei_fun1"
+        app:layout_constraintLeft_toRightOf="@id/btn_get_imei_fun1"
+        app:layout_constraintRight_toRightOf="@id/btn_get_imei_fun2_1"
+        app:layout_constraintTop_toTopOf="@id/btn_get_imei_fun1"
+        tools:ignore="HardcodedText" />
+
+    <Button
+        android:id="@+id/btn_get_imei_fun2_1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="获取imei_2(方法2)"
+        app:layout_constraintBottom_toBottomOf="@id/btn_get_imei_fun2"
+        app:layout_constraintLeft_toRightOf="@id/btn_get_imei_fun2"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="@id/btn_get_imei_fun2"
         tools:ignore="HardcodedText" />
 </androidx.constraintlayout.widget.ConstraintLayout>

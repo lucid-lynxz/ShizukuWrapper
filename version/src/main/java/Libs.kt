@@ -123,8 +123,8 @@ object Libs {
     const val readystatesoftwareChuckRelease = "com.readystatesoftware.chuck:library-no-op:1.1.0"
 
 
-    const val lynxzUtils = "com.github.lucid-lynxz:utils:0.1.25"
-    const val lynxzShizuku = "com.github.lucid-lynxz:shizukuwrapper:1.0.5"
+    const val lynxzUtils = "com.github.lucid-lynxz:utils:0.1.27"
+    const val lynxzShizuku = "com.github.lucid-lynxz:shizukuwrapper:1.0.6"
     const val mlkitWrapperVersion = "1.0.4"
     const val mlkikBase = "com.github.lucid-lynxz.MLKitWrapper:base:$mlkitWrapperVersion"
     const val mlkikTextdetector =
