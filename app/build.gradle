@@ -68,7 +68,6 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation(Testing.jUnit)
-    implementation(Libs.kotlinStdLib)
 
     androidTestImplementation(Testing.extJunitX)
     androidTestImplementation(Testing.espressoCoreX)
@@ -78,11 +77,13 @@ dependencies {
     implementation(Libs.material)
     implementation(Libs.constraintLayoutX)
 
-    implementation(Libs.kotlinCoreKtx)
     implementation(Libs.gson)
 //    implementation(Libs.kotlinCoroutinesCore)
 //    implementation(Libs.kotlinCoroutinesAndroid)
 
+    implementation(Libs.kotlinStdLib)
+    implementation(Libs.kotlinCoreKtx)
+    implementation(Libs.lynxzUtils)
     implementation project(path: ":shizuku")// 使用本地代码
 //    implementation(libs.shizukuwrapper) // 使用 jitpack 仓库上的版本
 }

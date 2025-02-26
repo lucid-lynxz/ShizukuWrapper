@@ -44,11 +44,13 @@ import kotlin.random.Random
  * -    4.5 解绑自定义服务: ShizukuImpl.unbindUserService(serviceCode)
  * -    4.6 不需要使用时反初始化: ShizukuImpl.uninit()
  * -    4.7 shizuku是否可用: ShizukuImpl.isEnabled()
- * -    4.8 获取imei: val imei = ShizukuImpl.getImei(index)
+ * -    4.8 获取imei: val imei = ShizukuImpl.getImei(index)  index可取值: 0,1
+ * -    4.9 关闭logcat日志: ShizukuImpl.toggleLog(false)
  */
 object ShizukuImpl {
     const val TAG = "ShizukuImpl"
     private var enabled = false // 当前是否可用
+    private var enableLog = true // 是否打印日志
     private var userService: IUserService? = null
     private var pkgName: String = ""
 
@@ -78,18 +80,18 @@ object ShizukuImpl {
     private val obPermission = object : Shizuku.OnRequestPermissionResultListener {
         override fun onRequestPermissionResult(requestCode: Int, grantResult: Int) {
             val granted = grantResult == PackageManager.PERMISSION_GRANTED
-            LoggerUtil.w(TAG, "onRequestPermissionResult requestCode=$requestCode,granted=$granted,grantResult=$grantResult")
+            printLog("onRequestPermissionResult requestCode=$requestCode,granted=$granted,grantResult=$grantResult")
             val callback = mCallbacks.get(requestCode) ?: return
             mCallbacks.remove(requestCode)
             callback.accept(granted)
         }
     }
     private val obBinderReceive = Shizuku.OnBinderReceivedListener {
-        LoggerUtil.w(TAG, "onBinderReceived")
+        printLog("onBinderReceived")
         enabled = true
 
         val clsPath = UserService::class.java.name
-        LoggerUtil.w(TAG, "pkgName=$pkgName,clsPath=$clsPath")
+        printLog("pkgName=$pkgName,clsPath=$clsPath")
         val userServiceArgs = Shizuku.UserServiceArgs(ComponentName(pkgName, clsPath))
             .daemon(false)
             .processNameSuffix("service")
@@ -98,50 +100,63 @@ object ShizukuImpl {
         innerUserServiceCode = bindUserService(userServiceArgs, userServiceConnection)
     }
     private val obBinderDead = Shizuku.OnBinderDeadListener {
-        LoggerUtil.w(TAG, "onBinderDead")
+        printLog("onBinderDead")
         enabled = false
         unbindUserService(innerUserServiceCode)
     }
 
     private val userServiceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-            LoggerUtil.d(TAG, "onServiceConnected ComponentName=$name, binder=$binder")
-            if (binder?.pingBinder() == true) {
+            val pingResult = binder?.pingBinder()
+            LoggerUtil.d(TAG, "onServiceConnected ComponentName=$name, binder=$binder, pingResult=$pingResult")
+            if (pingResult == true) {
                 userService = IUserService.Stub.asInterface(binder);
             }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            LoggerUtil.d(TAG, "onServiceConnected ComponentName=$name")
+            LoggerUtil.d(TAG, "onServiceDisconnected ComponentName=$name")
             userService = null
         }
     }
 
     /**
      * 指定指定的adb命令
+     * 执行多条时, 使用 && 符号连接
      */
     fun exec(cmd: String): CmdResult {
-        val errMsg = when {
+        var errMsg = when {
             !enabled -> "shizuku not enabled"
             userService == null -> "userService not connected"
             else -> ""
         }
 
-        val result = userService?.exec(cmd) ?: ""
-        LoggerUtil.w(TAG, "exec($cmd) result=$result")
-        return CmdResult(if (errMsg.isEmpty()) 0 else 1, result, errMsg)
+        val result: String = userService?.exec(cmd) ?: return CmdResult(1, "", errMsg)
+
+        printLog("exec($cmd) result=$result,errMsg=$errMsg")
+        val arr = result.split(UserService.EXEC_CMD_FLAG)
+        val len = arr.size
+        val code = if (arr.isNotEmpty()) arr[0].toInt() else 1
+        val successMsg = if (len >= 2) arr[1] else ""
+        errMsg = if (len >= 3) arr[2] else ""
+        return CmdResult(code, successMsg, errMsg)
     }
 
-    fun init(pkgName: Any?): Boolean {
-        if (pkgName is String) {
-            this.pkgName = pkgName
-        }
-        Sui.init("$pkgName")
+    fun init(pkgName: String): Boolean {
+        this.pkgName = pkgName
+        val suiResult = Sui.init(pkgName)
         Shizuku.addBinderReceivedListenerSticky(obBinderReceive)
         Shizuku.addBinderDeadListener(obBinderDead)
         Shizuku.addRequestPermissionResultListener(obPermission)
-        LoggerUtil.w(TAG, "init pkgName=$pkgName")
+        printLog("init pkgName=$pkgName, suiResult=$suiResult")
         return true
+    }
+
+    /**
+     * 是否允许输出日志
+     */
+    fun toggleLog(enable: Boolean) {
+        this.enableLog = enable
     }
 
     fun uninit() {
@@ -168,7 +183,7 @@ object ShizukuImpl {
 
     /**
      * 获取系统属性, 比如序列号:ro.serialno
-     * imei: "persist.radio.imei"  或者 "ro.ril.oem.imei"
+     * imei: "persist.radio.imei"  或者 "ro.ril.oem.imei" (不一定有效, 建议使用 [getImei] 方法)
      * 首次运行会获取不到内容
      */
     fun getSystemProperty(key: String, def: String = ""): String {
@@ -176,9 +191,9 @@ object ShizukuImpl {
         perform { granted ->
             if (granted) {
                 result = getSystemPropertyImpl(key, def)
-                LoggerUtil.w(TAG, "getSystemProperty($key,$def) result=$result")
+                printLog("getSystemProperty($key,$def) result=$result")
             } else {
-                LoggerUtil.w(TAG, "getSystemProperty($key,$def) fail: Shizuku not enabled")
+                printLog("getSystemProperty($key,$def) fail: Shizuku not enabled")
             }
         }
         return result
@@ -216,7 +231,7 @@ object ShizukuImpl {
         try {
             result = ShizukuSystemProperties.get(key, def)
         } catch (e: Exception) {
-            LoggerUtil.w(TAG, "getSystemProperty($key,$def) fail: ${e.message}")
+            printLog("getSystemProperty($key,$def) fail: ${e.message}")
         }
         return result
     }
@@ -226,13 +241,13 @@ object ShizukuImpl {
      */
     private fun checkPermission(code: Int): Boolean {
         if (!enabled) {
-            LoggerUtil.w(TAG, "checkPermission fail: Shizuku not enabled")
+            printLog("checkPermission fail: Shizuku not enabled")
             return false
         }
 
         if (Shizuku.isPreV11()) {
             // Pre-v11 is unsupported
-            LoggerUtil.w(TAG, "checkPermission fail: Pre-v11 is unsupported")
+            printLog("checkPermission fail: Pre-v11 is unsupported")
             return false;
         }
 
@@ -241,7 +256,7 @@ object ShizukuImpl {
             return true;
         } else if (Shizuku.shouldShowRequestPermissionRationale()) {
             // Users choose "Deny and don't ask again"
-            LoggerUtil.w(TAG, "checkPermission fail: Users choose \"Deny and don't ask again\"")
+            printLog("checkPermission fail: Users choose \"Deny and don't ask again\"")
             return false;
         } else {
             // Request the permission
@@ -300,15 +315,15 @@ object ShizukuImpl {
      */
     fun getImei(index: Int = 0): String {
         if (imeiList.isEmpty()) {
-            val result1 = exec("getprop | grep -i IMEI | awk -F'[][]' '{print \$4}' | sort | uniq -d")
-            val result =
-                if (result1.isSuccess()) result1 else exec(" service call iphonesubinfo 1 | awk -F \"'\" '{print \$2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS=")
-            if (result.isSuccess()) {
-                result.msg.split("\n").forEach {
-                    if (it.isNotBlank()) {
-                        imeiList.add(it)
-                    }
-                }
+            var result = exec("getprop | grep -i IMEI | awk -F'[][]' '{print \$4}' | sort | uniq -d") // 一次性获取所有imei并去重
+            add2ImeiList(result)
+
+            if (imeiList.isEmpty()) {
+                result = exec(" service call iphonesubinfo 1 | awk -F \"'\" '{print \$2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS=") // SIM1
+                add2ImeiList(result)
+
+                result = exec(" service call iphonesubinfo 2 | awk -F \"'\" '{print \$2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS=") // SIM2
+                add2ImeiList(result)
             }
         }
 
@@ -316,5 +331,21 @@ object ShizukuImpl {
             return imeiList[index]
         }
         return ""
+    }
+
+    private fun add2ImeiList(result: CmdResult) {
+        if (result.isSuccess()) {
+            result.msg.split("\n").forEach {
+                if (it.isNotBlank() && imeiList.indexOf(it) < 0) {
+                    imeiList.add(it)
+                }
+            }
+        }
+    }
+
+    private fun printLog(msg: String) {
+        if (enableLog) {
+            LoggerUtil.w(TAG, msg)
+        }
     }
 }

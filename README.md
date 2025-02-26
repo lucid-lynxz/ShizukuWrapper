@@ -5,7 +5,14 @@
 
 1. 导入依赖库:
     * 添加jitpack仓库: `maven { url = uri("https://jitpack.io") }`
-    * 添加依赖: `api("com.github.lucid-lynxz:shizukuwrapper:latest")`
+    * 添加依赖:
+    ```groovy
+      implementation("com.github.lucid-lynxz:utils:0.1.27")
+      implementation("org.jetbrains.kotlin:kotlin-stdlib:1.6.10") // 改为你项目中使用的版本
+      implementation("androidx.core:core-ktx:1.3.1") // 改为你项目中使用的版本
+   
+      implementation("com.github.lucid-lynxz:shizukuwrapper:latest")
+    ```
 2. 在Application中初始化ShizukuManager: `ShizukuImpl.init("app包名")`
 3. 调用ShizukuManager的方法进行操作:
    * 获取系统属性: val serailNo = ShizukuImpl.getSystemProperty("ro.serialno", "")

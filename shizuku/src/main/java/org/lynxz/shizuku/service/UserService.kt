@@ -2,7 +2,6 @@ package org.lynxz.shizuku.service
 
 import android.content.Context
 import android.os.RemoteException
-import android.text.TextUtils
 import androidx.annotation.Keep
 import org.lynxz.shizuku.IUserService
 import org.lynxz.utils.ShellUtil
@@ -12,6 +11,7 @@ import org.lynxz.utils.log.LoggerUtil
 class UserService : IUserService.Stub {
     companion object {
         private const val TAG = "UserService"
+        const val EXEC_CMD_FLAG = "____" // 执行adb命令后,返回结果字符串, 将code, successMsg , errMsg 通过本符号进行拼接
     }
 
     /**
@@ -48,8 +48,9 @@ class UserService : IUserService.Stub {
     @Throws(RemoteException::class)
     override fun exec(cmd: String?): String? {
         val result = ShellUtil.execCommand("$cmd\n", false)
-        val msg = if (TextUtils.isEmpty(result.errorMsg)) result.successMsg else result.errorMsg
-        LoggerUtil.d(TAG, "exec cmd=$cmd,resultCode=${result.result},errorMsg=$result.errorMsg,successMsg=${result.successMsg},finalMsg=$msg")
-        return msg
+        val code = result.result
+        val successMsg = result.successMsg.trim()
+        val errMsg = result.errorMsg.trim()
+        return "$code$EXEC_CMD_FLAG$successMsg$EXEC_CMD_FLAG$errMsg"
     }
 }
