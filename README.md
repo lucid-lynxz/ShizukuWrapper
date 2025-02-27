@@ -21,3 +21,6 @@
    * 绑定自定义服务: val serviceCode = ShizukuImpl.bindUserService(args, conn)
    * 解绑自定义服务: ShizukuImpl.unbindUserService(serviceCode)
    * 不需要使用时反初始化: ShizukuImpl.uninit()
+   * shizuku是否可用: ShizukuImpl.isEnabled()
+   * 获取imei: val imei = ShizukuImpl.getImei(index)  index可取值: 0,1
+   * 关闭logcat日志: ShizukuImpl.toggleLog(false)

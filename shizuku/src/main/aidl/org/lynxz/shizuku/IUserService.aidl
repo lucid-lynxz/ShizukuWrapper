@@ -8,6 +8,7 @@ interface IUserService {
 
     /**
      * 执行命令
+     * @param cmd 命令
      */
     String exec(String cmd) = 2;
 }

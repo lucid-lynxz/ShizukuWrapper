@@ -46,11 +46,11 @@ class UserService : IUserService.Stub {
     override fun exit() = destroy()
 
     @Throws(RemoteException::class)
-    override fun exec(cmd: String?): String? {
+    override fun exec(cmd: String?): String {
         val result = ShellUtil.execCommand("$cmd\n", false)
         val code = result.result
-        val successMsg = result.successMsg.trim()
-        val errMsg = result.errorMsg.trim()
-        return "$code$EXEC_CMD_FLAG$successMsg$EXEC_CMD_FLAG$errMsg"
+        val successMsg = result.successMsg ?: ""
+        val errMsg = result.errorMsg ?: ""
+        return "$code$EXEC_CMD_FLAG${successMsg.trim()}$EXEC_CMD_FLAG${errMsg.trim()}"
     }
 }

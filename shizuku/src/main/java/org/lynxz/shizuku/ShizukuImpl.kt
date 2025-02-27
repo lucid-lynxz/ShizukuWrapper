@@ -7,6 +7,7 @@ import android.os.IBinder
 import android.util.SparseArray
 import androidx.core.util.keyIterator
 import org.lynxz.shizuku.service.UserService
+import org.lynxz.utils.ShellUtil
 import org.lynxz.utils.log.LoggerUtil
 import org.lynxz.utils.otherwise
 import org.lynxz.utils.yes
@@ -123,23 +124,30 @@ object ShizukuImpl {
     /**
      * 指定指定的adb命令
      * 执行多条时, 使用 && 符号连接
+     * @param isRoot shizuku不可用时, 若要直接运行命令, 是否以root模式执行, 默认false, 请自行确保有root权限
+     * @param onlyByShizuku 是否只使用shizuku执行, false-当shizuku不可用时, 直接执行adb命令
      */
-    fun exec(cmd: String): CmdResult {
+    fun exec(cmd: String, isRoot: Boolean = false, onlyByShizuku: Boolean = true): CmdResult {
         var errMsg = when {
             !enabled -> "shizuku not enabled"
             userService == null -> "userService not connected"
             else -> ""
         }
-
-        val result: String = userService?.exec(cmd) ?: return CmdResult(1, "", errMsg)
-
-        printLog("exec($cmd) result=$result,errMsg=$errMsg")
-        val arr = result.split(UserService.EXEC_CMD_FLAG)
-        val len = arr.size
-        val code = if (arr.isNotEmpty()) arr[0].toInt() else 1
-        val successMsg = if (len >= 2) arr[1] else ""
-        errMsg = if (len >= 3) arr[2] else ""
-        return CmdResult(code, successMsg, errMsg)
+        return if (errMsg.isBlank()) {
+            val result: String = userService!!.exec(cmd)
+            printLog("exec($cmd) result=$result,errMsg=$errMsg")
+            val arr = result.split(UserService.EXEC_CMD_FLAG)
+            val len = arr.size
+            val code = if (arr.isNotEmpty()) arr[0].toInt() else 1
+            val successMsg = if (len >= 2) arr[1] else ""
+            errMsg = if (len >= 3) arr[2] else ""
+            CmdResult(code, successMsg, errMsg)
+        } else if (onlyByShizuku) {
+            CmdResult(1, "", errMsg)
+        } else {
+            val info = ShellUtil.execCommand(cmd, isRoot) ?: ShellUtil.CommandResult(1, "", "执行结果为空")
+            CmdResult(info.result, info.successMsg ?: "", info.errorMsg ?: "")
+        }
     }
 
     fun init(pkgName: String): Boolean {
@@ -315,14 +323,20 @@ object ShizukuImpl {
      */
     fun getImei(index: Int = 0): String {
         if (imeiList.isEmpty()) {
-            var result = exec("getprop | grep -i IMEI | awk -F'[][]' '{print \$4}' | sort | uniq -d") // 一次性获取所有imei并去重
+            var result = exec("getprop | grep -i IMEI | awk -F'[][]' '{print \$4}' | sort | uniq -d", onlyByShizuku = false) // 一次性获取所有imei并去重
             add2ImeiList(result)
 
             if (imeiList.isEmpty()) {
-                result = exec(" service call iphonesubinfo 1 | awk -F \"'\" '{print \$2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS=") // SIM1
+                result = exec(
+                    " service call iphonesubinfo 1 | awk -F \"'\" '{print \$2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS=",
+                    onlyByShizuku = false
+                ) // SIM1
                 add2ImeiList(result)
 
-                result = exec(" service call iphonesubinfo 2 | awk -F \"'\" '{print \$2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS=") // SIM2
+                result = exec(
+                    " service call iphonesubinfo 2 | awk -F \"'\" '{print \$2}' | sed '1 d' | tr -d '.' | awk '{print}' ORS=",
+                    onlyByShizuku = false
+                ) // SIM2
                 add2ImeiList(result)
             }
         }
