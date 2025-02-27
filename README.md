@@ -7,7 +7,7 @@
     * 添加jitpack仓库: `maven { url = uri("https://jitpack.io") }`
     * 添加依赖:
     ```groovy
-      implementation("com.github.lucid-lynxz:utils:0.1.27")
+      implementation("com.github.lucid-lynxz:utils:0.1.28")
       implementation("org.jetbrains.kotlin:kotlin-stdlib:1.6.10") // 改为你项目中使用的版本
       implementation("androidx.core:core-ktx:1.3.1") // 改为你项目中使用的版本
    
@@ -21,3 +21,7 @@
    * 绑定自定义服务: val serviceCode = ShizukuImpl.bindUserService(args, conn)
    * 解绑自定义服务: ShizukuImpl.unbindUserService(serviceCode)
    * 不需要使用时反初始化: ShizukuImpl.uninit()
+   * shizuku是否可用: ShizukuImpl.isEnabled()
+   * 获取imei: val imei = ShizukuImpl.getImei(index)  index可取值: 0,1
+   * 关闭logcat日志: ShizukuImpl.toggleLog(false)
+   * 是否已可通过shizuku执行adb命令: val isReady = ShizukuImpl.canExecCmd()

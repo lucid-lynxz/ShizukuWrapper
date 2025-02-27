@@ -17,10 +17,14 @@ class MainActivity : Activity() {
         }
 
         findViewById<Button>(R.id.btn_open_wifi).setOnClickListener {
-            ShizukuImpl.exec("svc wifi enable")
+            ShizukuImpl.exec("svc wifi enable", true, false).also {
+                Toast.makeText(this, "open wifi result=$it", Toast.LENGTH_SHORT).show()
+            }
         }
         findViewById<Button>(R.id.btn_close_wifi).setOnClickListener {
-            ShizukuImpl.exec("svc wifi disable")
+            ShizukuImpl.exec("svc wifi disable", true, false).also {
+                Toast.makeText(this, "close wifi result=$it", Toast.LENGTH_SHORT).show()
+            }
         }
         findViewById<Button>(R.id.btn_get_imei_fun1).setOnClickListener {
             val result = ShizukuImpl.getSystemProperty("ro.ril.oem.imei")
