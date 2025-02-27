@@ -7,6 +7,7 @@ import android.os.IBinder
 import android.util.SparseArray
 import androidx.core.util.keyIterator
 import org.lynxz.shizuku.service.UserService
+import org.lynxz.utils.ShellUtil
 import org.lynxz.utils.log.LoggerUtil
 import org.lynxz.utils.otherwise
 import org.lynxz.utils.yes
@@ -46,6 +47,7 @@ import kotlin.random.Random
  * -    4.7 shizuku是否可用: ShizukuImpl.isEnabled()
  * -    4.8 获取imei: val imei = ShizukuImpl.getImei(index)  index可取值: 0,1
  * -    4.9 关闭logcat日志: ShizukuImpl.toggleLog(false)
+ * -    4.10 是否已可通过shizuku执行adb命令: val isReady = ShizukuImpl.canExecCmd()
  */
 object ShizukuImpl {
     const val TAG = "ShizukuImpl"
@@ -87,11 +89,9 @@ object ShizukuImpl {
         }
     }
     private val obBinderReceive = Shizuku.OnBinderReceivedListener {
-        printLog("onBinderReceived")
         enabled = true
-
         val clsPath = UserService::class.java.name
-        printLog("pkgName=$pkgName,clsPath=$clsPath")
+        printLog("onBinderReceived pkgName=$pkgName,clsPath=$clsPath")
         val userServiceArgs = Shizuku.UserServiceArgs(ComponentName(pkgName, clsPath))
             .daemon(false)
             .processNameSuffix("service")
@@ -123,23 +123,31 @@ object ShizukuImpl {
     /**
      * 指定指定的adb命令
      * 执行多条时, 使用 && 符号连接
+     * @param isRoot shizuku不可用时, 若要直接运行命令, 是否以root模式执行, 默认false, 请自行确保有root权限
+     * @param onlyByShizuku 是否只使用shizuku执行, false-当shizuku不可用时, 直接执行adb命令
      */
-    fun exec(cmd: String): CmdResult {
+    @JvmOverloads
+    fun exec(cmd: String, isRoot: Boolean = false, onlyByShizuku: Boolean = true): CmdResult {
         var errMsg = when {
             !enabled -> "shizuku not enabled"
             userService == null -> "userService not connected"
             else -> ""
         }
-
-        val result: String = userService?.exec(cmd) ?: return CmdResult(1, "", errMsg)
-
-        printLog("exec($cmd) result=$result,errMsg=$errMsg")
-        val arr = result.split(UserService.EXEC_CMD_FLAG)
-        val len = arr.size
-        val code = if (arr.isNotEmpty()) arr[0].toInt() else 1
-        val successMsg = if (len >= 2) arr[1] else ""
-        errMsg = if (len >= 3) arr[2] else ""
-        return CmdResult(code, successMsg, errMsg)
+        return if (errMsg.isBlank()) {
+            val result: String = userService!!.exec(cmd)
+            printLog("exec($cmd) result=$result,errMsg=$errMsg")
+            val arr = result.split(UserService.EXEC_CMD_FLAG)
+            val len = arr.size
+            val code = if (arr.isNotEmpty()) arr[0].toInt() else 1
+            val successMsg = if (len >= 2) arr[1] else ""
+            errMsg = if (len >= 3) arr[2] else ""
+            CmdResult(code, successMsg, errMsg)
+        } else if (onlyByShizuku) {
+            CmdResult(1, "", errMsg)
+        } else {
+            val info = ShellUtil.execCommand(cmd, isRoot) ?: ShellUtil.CommandResult(1, "", "执行结果为空")
+            CmdResult(info.result, info.successMsg ?: "", info.errorMsg ?: "")
+        }
     }
 
     fun init(pkgName: String): Boolean {
@@ -290,6 +298,11 @@ object ShizukuImpl {
      * shizuku是否可用
      */
     fun isEnabled(): Boolean = enabled
+
+    /**
+     * 当前是否可以通过shizuku执行adb命令, 返回true表示userService已连接
+     */
+    fun canExecCmd(): Boolean = enabled && userService != null
 
     private val imeiList = mutableListOf<String>()
 

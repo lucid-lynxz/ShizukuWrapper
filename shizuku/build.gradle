@@ -11,7 +11,7 @@ android {
         minSdkVersion BuildConfigInfo.minSdkVersion
         targetSdkVersion BuildConfigInfo.targetSdkVersion
         versionCode 1
-        versionName "1.0.7"
+        versionName "1.0.9"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles "consumer-rules.pro"
     }
@@ -55,7 +55,7 @@ afterEvaluate {
                 // 自定义属性
                 groupId = 'com.github.lucid-lynxz' // 依赖库的 Group Id（Jitpack不会使用到）
                 artifactId = 'shizukuwrapper' // 依赖库的名称，单组件发布时随意填写，多组件时即为此组件的 ArtifactId（Jitpack不会使用到）
-                version = "1.0.7"
+                version = "1.0.9"
             }
         }
     }
