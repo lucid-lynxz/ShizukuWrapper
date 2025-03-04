@@ -145,7 +145,7 @@ object ShizukuImpl {
         } else if (onlyByShizuku) {
             CmdResult(1, "", errMsg)
         } else {
-            val info = ShellUtil.execCommand(cmd, isRoot) ?: ShellUtil.CommandResult(1, "", "执行结果为空")
+            val info = ShellUtil.execCommand(cmd, isRoot) ?: ShellUtil.CommandResult(1, "", "直接执行结果为空,$errMsg")
             CmdResult(info.result, info.successMsg ?: "", info.errorMsg ?: "")
         }
     }

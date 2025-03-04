@@ -124,7 +124,7 @@ object Libs {
 
 
     const val lynxzUtils = "com.github.lucid-lynxz:utils:0.1.28"
-    const val lynxzShizuku = "com.github.lucid-lynxz:shizukuwrapper:1.0.9"
+    const val lynxzShizuku = "com.github.lucid-lynxz:shizukuwrapper:1.0.10"
     const val mlkitWrapperVersion = "1.0.4"
     const val mlkikBase = "com.github.lucid-lynxz.MLKitWrapper:base:$mlkitWrapperVersion"
     const val mlkikTextdetector =
